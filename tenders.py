@@ -7,30 +7,55 @@ import fake_useragent
 import transliterate
 import datetime
 import dataAutorize
+import tenders
+
+
 
 now = datetime.datetime.now()
 date = now.strftime("%d-%m-%Y %H:%M")
-HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0', 'accept': '*/*'}
+
+
+# Авторизация сессии
 session = requests.Session()
 HOST = 'http://t1.torgi223.ru/'
 link = 'http://t1.torgi223.ru/login.php'
 user = fake_useragent.UserAgent().random
-
+data = dataAutorize.data
 header = {
     'user-agent': user
 }
-
-data = dataAutorize.data
-
 responce = session.post(link, data=data, headers=header).text
 
+
+HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0', 'accept': '*/*'}
+
+# Ajax-параметры
+HEADERSajax = {
+    'Accept': 'text/html, */*',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Connection': 'keep-alive',
+    'Content-Length': '7',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Cookie': '_ym_uid=1608004265188028299; _ym_d=1608004265; _fbp=fb.1.1608004265021.1214446099; viewError=; PHPSESSID=2j0pq2k1lqapucpt1s0ujoiqb0',
+    'Host': 't1.torgi223.ru',
+    'Origin': 'http://t1.torgi223.ru',
+    'Referer': 'http://t1.torgi223.ru/index.php?module=71&mode=viewRequest&requestId=3864',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+    'X-Requested-With': 'XMLHttpRequest',
+}
+
+
+
 def get_html(url, params=None):
-    r = session.get(url, headers=header, params=params)
+    r = session.get(url, headers=HEADERS, params=params)
     return r
 
-def get_html2(url, params=None):
-    d = requests.get(url, headers=HEADERS, params=params)
+
+def get_ajax(ajaxhref, ajaxId, params=None):
+    d = session.post(ajaxhref, data=ajaxId, headers=HEADERSajax, params=params)
     return d
+
 
 
 
@@ -54,14 +79,15 @@ def get_pages_count(html):
 def get_content(html):
     soup = BeautifulSoup(html, 'html.parser')
     items = soup.findAll('tr', {"id": "rowId-0"})
+
     catalog = []  
     for item in items:
 
 
         nameProcedure = item.find('td', class_='row-purchaseName').get_text(strip=True)
         nameProcedure2 = str(nameProcedure)
-
-        words = ["печатная", "конверты", "конвертов", "бланочной", "журналы", "журналов", "полиграфической", "полиграфии",
+        
+        words = ["Поставка", "печатная", "конверты", "конвертов", "бланочной", "журналы", "журналов", "полиграфической", "полиграфии",
          "печатного", "печать", "печати", "полиграфических", "бланки", "бланков", "бланочной", "газеты",
           "газет", "папок", "папки", "типографская", "полиграфические", "печатная", "фотоальбомов", "фотоальбомы", "альбомы",
            "альбомов", "календари", "календарей", "фотокалендари", "фотокалендарей", "визитные карточки", "визитных карточек",
@@ -73,18 +99,19 @@ def get_content(html):
             if word.lower() in nameProcedure2.lower():
                 # Ссылка на процедуру
                 href = item.find('a').get('href')
-
+                print(href)
+                print(nameProcedure2)
                 html2 = get_html(href)
-                soup2 = BeautifulSoup(html2.text, 'html.parser')
-                items2 = soup2.find('li', class_='current')                
-        
+                soup2 = BeautifulSoup(html2.text, 'html.parser')      
+
+
+
                 # Наименование заказчика    
                 customer = item.find('td', class_='row-customerName').get_text(strip=True)
-                print(customer)                            
-            
+
                 # Номер процедуры
                 numberProcedure = item.find('td', class_='row-id').get_text(strip=True)
-                print(numberProcedure)
+
                 
                 # Номер извещения в ЕИС
                 numberEIS = item.find('td', class_='row-registrationNumber').get_text(strip=True)             
@@ -102,7 +129,35 @@ def get_content(html):
                 typeProcedure = item.find('td', class_='row-typeTorgsName').get_text(strip=True)         
 
                 # Статус процедуры
-                typeProcedure = item.find('td', class_='row-statusName').get_text(strip=True)           
+                typeProcedure = item.find('td', class_='row-statusName').get_text(strip=True)         
+
+                # Получаем id ajax запроса
+                try:
+                    ajaxId0 = soup2.find('td', class_='viewDatanLot').get('lotid')
+                    print('try' + ajaxId0)
+
+                except:
+                    try:
+                        ajaxId0 = soup2.find('td', class_='viewDatanLotPriceRequest').get('lotid')
+                        print('except' + ajaxId0) 
+
+                    except:
+                        try:
+                            ajaxId0 = soup2.find('td', class_='viewDatanLotAuction').get('lotid')
+                            print('else' + ajaxId0)
+
+                        except:
+                            print('error')
+                
+
+                ajaxId = {
+                    'id': ajaxId0
+                }
+                ajaxhref = 'http://t1.torgi223.ru/includes/QuotationNt/ajax/qntAjaxViewLotQuotation.php'
+                html3 = get_ajax(ajaxhref, ajaxId)
+                soup3 = BeautifulSoup(html3.text, 'html.parser')
+                print(soup3)
+
             else:
                 continue
                
@@ -136,9 +191,9 @@ def save_file(items, path):
             writer.writerow([item['title'],])
 
 # Основная функция Создаём каталог
-def parse():
+def parse1():
     for URL in [
-        
+    
 'http://t1.torgi223.ru/registry/list/'
 
     ]:
@@ -167,7 +222,8 @@ def parse():
 
 
 
-parse()
+parse1()
+#parser2()
 
 
 
