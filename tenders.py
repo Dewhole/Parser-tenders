@@ -7,7 +7,6 @@ import fake_useragent
 import transliterate
 import datetime
 import dataAutorize
-import tenders
 from multiprocessing import Pool
 
 
@@ -54,8 +53,8 @@ def get_pages_count(html):
         pagination = paginationTo.find_all('a') 
         pagination2 = str(pagination[-1].get('href'))
         pagination3 = pagination2[21:]
-        return 1 
-
+        return int(pagination3)
+  #      return 100
     else:
         return 1
         
@@ -72,7 +71,7 @@ def get_content(html):
         nameProcedure = item.find('td', class_='row-purchaseName').get_text(strip=True)
         nameProcedure2 = str(nameProcedure)
         
-        words = ["Поставка", "печатная", "конверты", "конвертов", "бланочной", "журналы", "журналов", "полиграфической", "полиграфии",
+        words = ["печатная", "конверты", "конвертов", "бланочной", "журналы", "журналов", "полиграфической", "полиграфии",
          "печатного", "печать", "печати", "полиграфических", "бланки", "бланков", "бланочной", "газеты",
           "газет", "папок", "папки", "типографская", "полиграфические", "печатная", "фотоальбомов", "фотоальбомы", "альбомы",
            "альбомов", "календари", "календарей", "фотокалендари", "фотокалендарей", "визитные карточки", "визитных карточек",
@@ -121,25 +120,25 @@ def get_content(html):
                 # Получаем id ajax запроса
                 try:
                     ajaxId0 = soup2.find('td', class_='viewDatanLot').get('lotid')
-                    print('try ' + ajaxId0)
+
 
                 except:
                     try:
                         ajaxId0 = soup2.find('td', class_='viewDatanLotPriceRequest').get('lotid')
-                        print('except ' + ajaxId0) 
+
 
                     except:
                         try:
                             ajaxId0 = soup2.find('td', class_='viewDatanLotAuction').get('lotid')
-                            print('except2 ' + ajaxId0)
+
                         except:
                             try:
                                 ajaxId0 = soup2.find('td', class_='viewDatanLotEShop').get('lotid')
-                                print('except3 ' + ajaxId0)
+
                             except:
                                 try:
                                     ajaxId0 = soup2.find('td', class_='viewDatanLotMlpdo').get('lotid')
-                                    print('except4 ' + ajaxId0)                                
+                           
                                 except:
                                     print('error')
 
@@ -163,13 +162,56 @@ def get_content(html):
                     'X-Requested-With': 'XMLHttpRequest',
                 }
                
-                ajaxhref = 'http://t1.torgi223.ru/qrAjaxViewLotQuotation.php'
+                
+                ajaxhref = 'http://t1.torgi223.ru/includes/AuctionIS/ajax/viewLot.php'
+                ajaxhref2 = 'http://t1.torgi223.ru/ajaxViewLotProffer.php'
+                ajaxhref3 = 'http://t1.torgi223.ru/qrAjaxViewLotQuotation.php'
+                ajaxhref4 = 'http://t1.torgi223.ru/includes/QuotationNt/ajax/qntAjaxViewLotQuotation.php'
+                ajaxhref4 = 'http://t1.torgi223.ru/includes/AuctionIS/ajax/viewLot.php'
+                ajaxhref5 = 'http://t1.torgi223.ru/includes/Cez/ajax/viewLot.php'
+
+
+
                 html3 = get_ajax(ajaxhref, ajaxId, HEADERSajax)
                 soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                print (soup3)
-         
+                strsoup3 = str(soup3)
+                lenstr = ((len(strsoup3)))
+                if lenstr == 31:
+                    html3 = get_ajax(ajaxhref2, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                    strsoup3 = str(soup3)
+                    lenstr = ((len(strsoup3)))
+                else:
+                    html3 = get_ajax(ajaxhref, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
 
-
+                if lenstr == 31:
+                    html3 = get_ajax(ajaxhref3, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                    strsoup3 = str(soup3)
+                    lenstr = ((len(strsoup3)))
+                else:
+                    html3 = get_ajax(ajaxhref2, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                    
+                if lenstr == 31:
+                    html3 = get_ajax(ajaxhref4, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                    strsoup3 = str(soup3)
+                    lenstr = ((len(strsoup3)))
+                else:
+                    html3 = get_ajax(ajaxhref3, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                    
+                if lenstr == 31:
+                    html3 = get_ajax(ajaxhref5, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                    strsoup3 = str(soup3)
+                    lenstr = ((len(strsoup3)))
+                else:
+                    html3 = get_ajax(ajaxhref4, ajaxId, HEADERSajax)
+                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
+                
 
                 catalog.append({
                     'hrefLot': hrefLot,
@@ -199,13 +241,29 @@ def get_content(html):
 
 
 # функция записи спарсенных значений в csv файл
-def save_file(items, path):
-    with open(path, 'w',  encoding='utf8', newline='') as file:
+def save_file(items, FILE):
+    with open(FILE, 'a',  encoding='utf8', newline='') as file:
         writer = csv.writer(file, delimiter=',')
-        writer.writerow(['Ссылка на тендер', 'Номер процедуры', 'Номер извещения в ЕИС', 'Наименование заказчика', 'Наименование процедуры', 'Начальная цена процедуры','Дата публикации', 'Дата окончания подачи заявок', 'Тип процедуры', 'Статус процедуры', 'Скрытый текст'])
         for item in items:
             writer.writerow([item['hrefLot'], item['numberProcedure'], item['numberEIS'], item['customer'], item['nameProcedure'], item['cost'], item['date'], item['dateLast'], item['typeProcedure'], item['statusProcedure'], item['hiddenText']])
 
+
+def new_file(FILE):
+    with open(FILE, 'a',  encoding='utf8', newline='') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(['Ссылка на тендер', 'Номер процедуры', 'Номер извещения в ЕИС', 'Наименование заказчика', 'Наименование процедуры', 'Начальная цена процедуры','Дата публикации', 'Дата окончания подачи заявок', 'Тип процедуры', 'Статус процедуры', 'Скрытый текст'])
+
+   
+def make_all(links):
+    print(f'Парсинг страницы {links} {len(links)}...')
+    html = get_html(links)
+    catalog = []
+    catalog.extend(get_content(html.text))
+    FILE = date + '.csv' 
+    save_file(catalog, FILE)
+
+
+    print(f'Получено {len(catalog)} товаров') 
 
 
 # Основная функция Создаём каталог
@@ -217,23 +275,25 @@ def parse1():
     ]:
 
         html = get_html(URL)
+        print(html)
         if html.status_code == 200:
+            FILE = date + '.csv'   
+            new_file(FILE)
             catalog = []
             pages_count = get_pages_count(html.text)
+            links = []
             for page in range (1, pages_count + 1):
-                print(f'Парсинг страницы {page} {pages_count} {URL}...')
-                html = get_html(URL, params={'page': page})
-                catalog.extend(get_content(html.text))
-                time.sleep(1)
-            FILE = date + '.csv'   
-            save_file(catalog, FILE)
+                href = 'http://t1.torgi223.ru/registry/list/?auth=1&page=' + str(page)       
+                links.append(href)
+             
+
+            with Pool(20) as p:
+                p.map(make_all, links)
 
 
-            print(f'Получено {len(catalog)} товаров')
+
         else:
-            print('Error')  
-
-# Функция срабатывает каждые сутки (86400 секунд)
+            print('Error') 
 
 
 
@@ -261,7 +321,78 @@ while True:
         break
     next_button.click()
 
+                print(f'Парсинг страницы {page} {pages_count} {URL}...')
+                html = get_html(URL, params={'page': page})
+                catalog.extend(get_content(html.text))
+                time.sleep(1)
+            FILE = date + '.csv'   
+            save_file(catalog, FILE)
+
+
+            print(f'Получено {len(catalog)} товаров') 
 
 while True:
     time.sleep(30)
-    parse()"""
+    parse()
+    
+def make_all(links, catalog):
+    html = get_html(link)
+    catalog.extend(get_content(html.text))
+    return catalog
+
+
+# Основная функция Создаём каталог
+def parse1():
+    for URL in [
+    
+'http://t1.torgi223.ru/registry/list/'
+
+    ]:
+
+        html = get_html(URL)
+        print(html)
+        if html.status_code == 200:
+            catalog = []
+            pages_count = get_pages_count(html.text)
+            links = []
+            for page in range (1, pages_count + 1):
+                href = 'http://t1.torgi223.ru/registry/list/?auth=1&page=' + str(page)       
+                links.append(href)
+
+
+            with Pool(2) as p:
+                p.map(make_all, links)
+
+
+            FILE = date + '.csv'   
+            save_file(catalog, FILE)
+
+
+            print(f'Получено {len(catalog)} товаров') 
+        else:
+            print('Error')  
+
+# Функция срабатывает каждые сутки (86400 секунд)
+
+
+
+
+
+
+
+parse1()
+#parser2()    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    """
+    
