@@ -8,11 +8,21 @@ import transliterate
 import datetime
 import dataAutorize
 from multiprocessing import Pool
+import os
+import smtplib                                                                               
+import mimetypes                                            # Импорт класса для обработки неизвестных MIME-типов, базирующихся на расширении файла
+from email import encoders                                  # Импортируем энкодер
+from email.mime.base import MIMEBase                        # Общий тип
+from email.mime.text import MIMEText                        # Текст/HTML
+from email.mime.image import MIMEImage                      # Изображения
+from email.mime.audio import MIMEAudio                      # Аудио
+from email.mime.multipart import MIMEMultipart       
 
 
 now = datetime.datetime.now()
 date = now.strftime("%d-%m-%Y %H:%M")
 
+FILE = './files/' + 'tenders ' + date + '.csv' 
 
 # Авторизация сессии
 session = requests.Session()
@@ -27,7 +37,20 @@ responce = session.post(link, data=data, headers=header).text
 
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0', 'accept': '*/*'}
-
+HEADERSajax = {
+    'Accept': 'text/html, */*',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Connection': 'keep-alive',
+    'Content-Length': '8',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Cookie': '_ym_uid=1608004265188028299; _ym_d=1608004265; _fbp=fb.1.1608004265021.1214446099; PHPSESSID=e7kocf79joj326ps5lua0lf272; viewError=',
+    'Host': 't1.torgi223.ru',
+    'Origin': 'http://t1.torgi223.ru',
+    'Referer': 'http://t1.torgi223.ru/index.php?module=41&mode=viewRequest&requestId=20866',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+    'X-Requested-With': 'XMLHttpRequest',
+}
 
 
 
@@ -54,7 +77,7 @@ def get_pages_count(html):
         pagination2 = str(pagination[-1].get('href'))
         pagination3 = pagination2[21:]
         return int(pagination3)
-  #      return 100
+     #   return 1
     else:
         return 1
         
@@ -142,25 +165,11 @@ def get_content(html):
                                 except:
                                     print('error')
 
-
                 ajaxId = {
                     'id': ajaxId0
                 }
 
-                HEADERSajax = {
-                    'Accept': 'text/html, */*',
-                    'Accept-Encoding': 'gzip, deflate',
-                    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Connection': 'keep-alive',
-                    'Content-Length': '8',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Cookie': '_ym_uid=1608004265188028299; _ym_d=1608004265; _fbp=fb.1.1608004265021.1214446099; viewError=; PHPSESSID=m6jfdgp7dlqtp6qpltlv8k4ul2',
-                    'Host': 't1.torgi223.ru',
-                    'Origin': 'http://t1.torgi223.ru',
-                    'Referer': 'http://t1.torgi223.ru/index.php?module=71&mode=viewRequest&requestId=20815',
-                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
-                    'X-Requested-With': 'XMLHttpRequest',
-                }
+
                
                 
                 ajaxhref = 'http://t1.torgi223.ru/includes/AuctionIS/ajax/viewLot.php'
@@ -171,47 +180,26 @@ def get_content(html):
                 ajaxhref5 = 'http://t1.torgi223.ru/includes/Cez/ajax/viewLot.php'
 
 
-
                 html3 = get_ajax(ajaxhref, ajaxId, HEADERSajax)
-                soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                strsoup3 = str(soup3)
-                lenstr = ((len(strsoup3)))
-                if lenstr == 31:
-                    html3 = get_ajax(ajaxhref2, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                    strsoup3 = str(soup3)
-                    lenstr = ((len(strsoup3)))
-                else:
+                if html3.status_code == 200:
                     html3 = get_ajax(ajaxhref, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-
-                if lenstr == 31:
-                    html3 = get_ajax(ajaxhref3, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                    strsoup3 = str(soup3)
-                    lenstr = ((len(strsoup3)))
                 else:
                     html3 = get_ajax(ajaxhref2, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                    
-                if lenstr == 31:
-                    html3 = get_ajax(ajaxhref4, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                    strsoup3 = str(soup3)
-                    lenstr = ((len(strsoup3)))
-                else:
-                    html3 = get_ajax(ajaxhref3, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                    
-                if lenstr == 31:
-                    html3 = get_ajax(ajaxhref5, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                    strsoup3 = str(soup3)
-                    lenstr = ((len(strsoup3)))
-                else:
-                    html3 = get_ajax(ajaxhref4, ajaxId, HEADERSajax)
-                    soup3 = BeautifulSoup(html3.text, 'html.parser').get_text
-                
+                    if html3.status_code == 200:
+                        html3 = get_ajax(ajaxhref2, ajaxId, HEADERSajax)
+                    else:
+                        html3 = get_ajax(ajaxhref3, ajaxId, HEADERSajax)
+                        if html3.status_code == 200:
+                            html3 = get_ajax(ajaxhref3, ajaxId, HEADERSajax)
+                        else:
+                            html3 = get_ajax(ajaxhref4, ajaxId, HEADERSajax)
+                            if html3.status_code == 200:
+                                html3 = get_ajax(ajaxhref4, ajaxId, HEADERSajax)
+                            else:
+                                html3 = get_ajax(ajaxhref5, ajaxId, HEADERSajax)
+                print(html3)    
+                soup3 = BeautifulSoup(html3.text, 'html.parser').get_text(strip=True)
+                print(soup3)
 
                 catalog.append({
                     'hrefLot': hrefLot,
@@ -234,40 +222,35 @@ def get_content(html):
     
             
     return catalog                    
-            
+                    
 
-            
-
-
-
-# функция записи спарсенных значений в csv файл
+    # функция записи спарсенных значений в csv файл
 def save_file(items, FILE):
     with open(FILE, 'a',  encoding='utf8', newline='') as file:
         writer = csv.writer(file, delimiter=',')
         for item in items:
             writer.writerow([item['hrefLot'], item['numberProcedure'], item['numberEIS'], item['customer'], item['nameProcedure'], item['cost'], item['date'], item['dateLast'], item['typeProcedure'], item['statusProcedure'], item['hiddenText']])
 
-
+    # Создание нового файла с заголовками
 def new_file(FILE):
     with open(FILE, 'a',  encoding='utf8', newline='') as file:
         writer = csv.writer(file, delimiter=',')
         writer.writerow(['Ссылка на тендер', 'Номер процедуры', 'Номер извещения в ЕИС', 'Наименование заказчика', 'Наименование процедуры', 'Начальная цена процедуры','Дата публикации', 'Дата окончания подачи заявок', 'Тип процедуры', 'Статус процедуры', 'Скрытый текст'])
 
-   
+   # Реализация многопоточности
 def make_all(links):
     print(f'Парсинг страницы {links} {len(links)}...')
     html = get_html(links)
     catalog = []
     catalog.extend(get_content(html.text))
-    FILE = date + '.csv' 
     save_file(catalog, FILE)
 
 
     print(f'Получено {len(catalog)} товаров') 
 
 
-# Основная функция Создаём каталог
-def parse1():
+# Создаём каталог
+def parse():
     for URL in [
     
 'http://t1.torgi223.ru/registry/list/'
@@ -277,7 +260,6 @@ def parse1():
         html = get_html(URL)
         print(html)
         if html.status_code == 200:
-            FILE = date + '.csv'   
             new_file(FILE)
             catalog = []
             pages_count = get_pages_count(html.text)
@@ -296,103 +278,101 @@ def parse1():
             print('Error') 
 
 
+    # Удаление файлов в папке
+def delete_files():
+    filelist = [ f for f in os.listdir('./files/') if f.endswith(".csv") ]
+    for f in filelist:
+        os.remove(os.path.join('./files/', f))
+
+
+
+    # Блок отправки сообщения с файлом на почту
+def send_email(addr_to, msg_subj, msg_text, files):
+    addr_from = "servermailfrom@gmail.com"                         # Отправитель
+    password  = "QWEdsa123"                                  # Пароль
+
+    msg = MIMEMultipart()                                   # Создаем сообщение
+    msg['From']    = addr_from                              # Адресат
+    msg['To']      = addr_to                                # Получатель
+    msg['Subject'] = msg_subj                               # Тема сообщения
+
+    body = msg_text                                         # Текст сообщения
+    msg.attach(MIMEText(body, 'plain'))                     # Добавляем в сообщение текст
+
+    process_attachement(msg, files)
+
+    #======== Этот блок настраивается для каждого почтового провайдера отдельно ===============================================
+    server = smtplib.SMTP('smtp.gmail.com', 587)        # Создаем объект SMTP
+    server.starttls()                                   # Начинаем шифрованный обмен по TLS
+    server.login(addr_from, password)                   # Получаем доступ
+    server.send_message(msg)                            # Отправляем сообщение
+    server.quit()                                       # Выходим
+    #==========================================================================================================================
+
+def process_attachement(msg, files):                        # Функция по обработке списка, добавляемых к сообщению файлов
+    for f in files:
+        if os.path.isfile(f):                               # Если файл существует
+            attach_file(msg,f)                              # Добавляем файл к сообщению
+        elif os.path.exists(f):                             # Если путь не файл и существует, значит - папка
+            dir = os.listdir(f)                             # Получаем список файлов в папке
+            for file in dir:                                # Перебираем все файлы и...
+                attach_file(msg,f+"/"+file)                 # ...добавляем каждый файл к сообщению
+
+def attach_file(msg, filepath):                             # Функция по добавлению конкретного файла к сообщению
+    filename = os.path.basename(filepath)                   # Получаем только имя файла
+    ctype, encoding = mimetypes.guess_type(filepath)        # Определяем тип файла на основе его расширения
+    if ctype is None or encoding is not None:               # Если тип файла не определяется
+        ctype = 'application/octet-stream'                  # Будем использовать общий тип
+    maintype, subtype = ctype.split('/', 1)                 # Получаем тип и подтип
+    if maintype == 'text':                                  # Если текстовый файл
+        with open(filepath) as fp:                          # Открываем файл для чтения
+            file = MIMEText(fp.read(), _subtype=subtype)    # Используем тип MIMEText
+            fp.close()                                      # После использования файл обязательно нужно закрыть
+    elif maintype == 'image':                               # Если изображение
+        with open(filepath, 'rb') as fp:
+            file = MIMEImage(fp.read(), _subtype=subtype)
+            fp.close()
+    elif maintype == 'audio':                               # Если аудио
+        with open(filepath, 'rb') as fp:
+            file = MIMEAudio(fp.read(), _subtype=subtype)
+            fp.close()
+    else:                                                   # Неизвестный тип файла
+        with open(filepath, 'rb') as fp:
+            file = MIMEBase(maintype, subtype)              # Используем общий MIME-тип
+            file.set_payload(fp.read())                     # Добавляем содержимое общего типа (полезную нагрузку)
+            fp.close()
+            encoders.encode_base64(file)                    # Содержимое должно кодироваться как Base64
+    file.add_header('Content-Disposition', 'attachment', filename=filename) # Добавляем заголовки
+    msg.attach(file)                                        # Присоединяем файл к сообщению
+
+# Использование функции send_email()
+addr_to   = "dewhole1@gmail.com"                                # Получатель
+files = ["./files/",                                      # Список файлов, если вложений нет, то files=[]
+         "file2_path",                                      
+         "password"]                                       # Если нужно отправить все файлы из заданной папки, нужно указать её
+
+
+
+    # Основаная функция (парсим, формируем файл, отправляем его на почту, удаляем файл, через сутки по-новой)
+def main():
+    while True:       
+        parse()
+        time.sleep(10)  
+        send_email(addr_to, "Тема сообщения", "Текст сообщения", files)
+        time.sleep(10)
+        delete_files()
+        time.sleep(86400)
+    
+main()
 
 
 
 
 
-parse1()
-#parser2()
-
-
-
-""" 'https://2676270.ru/catalog/yarn/92/',
-'https://2676270.ru/catalog/yarn/93/',
-'https://2676270.ru/catalog/yarn/1419/'
-'https://2676270.ru/catalog/yarn/1677/',
-'https://2676270.ru/catalog/yarn/2453/',
-'https://2676270.ru/catalog/yarn/909/',
-'https://2676270.ru/catalog/yarn/95/' 
-
+""" 
 while True:
     try:
         next_button = driver.find_element_by_id('oq-nav-nxt')
     except NoSuchElementException:
         break
-    next_button.click()
-
-                print(f'Парсинг страницы {page} {pages_count} {URL}...')
-                html = get_html(URL, params={'page': page})
-                catalog.extend(get_content(html.text))
-                time.sleep(1)
-            FILE = date + '.csv'   
-            save_file(catalog, FILE)
-
-
-            print(f'Получено {len(catalog)} товаров') 
-
-while True:
-    time.sleep(30)
-    parse()
-    
-def make_all(links, catalog):
-    html = get_html(link)
-    catalog.extend(get_content(html.text))
-    return catalog
-
-
-# Основная функция Создаём каталог
-def parse1():
-    for URL in [
-    
-'http://t1.torgi223.ru/registry/list/'
-
-    ]:
-
-        html = get_html(URL)
-        print(html)
-        if html.status_code == 200:
-            catalog = []
-            pages_count = get_pages_count(html.text)
-            links = []
-            for page in range (1, pages_count + 1):
-                href = 'http://t1.torgi223.ru/registry/list/?auth=1&page=' + str(page)       
-                links.append(href)
-
-
-            with Pool(2) as p:
-                p.map(make_all, links)
-
-
-            FILE = date + '.csv'   
-            save_file(catalog, FILE)
-
-
-            print(f'Получено {len(catalog)} товаров') 
-        else:
-            print('Error')  
-
-# Функция срабатывает каждые сутки (86400 секунд)
-
-
-
-
-
-
-
-parse1()
-#parser2()    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    """
-    
+    next_button.click() """
